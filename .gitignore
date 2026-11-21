@@ -1,0 +1,43 @@
+# ---------- Node / Vite / 前端 ----------
+node_modules/
+dist/
+.vite/
+*.local
+
+# 依赖锁文件（跨平台统一）
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ---------- Java / Maven / Spring Boot ----------
+target/
+*.class
+*.jar
+*.log
+.idea/
+.vscode/
+*.iml
+.DS_Store
+.factorypath
+
+# ---------- 环境配置 ----------
+.env
+.env.local
+.env.*.local
+
+# ---------- 系统 & 临时 ----------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.iml
+
+# ---------- 数据库 dump ----------
+*.sql.bak
+*.dump

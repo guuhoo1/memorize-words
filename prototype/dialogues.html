@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memorize · 对话集</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* Dialogue detail modal override */
+.detail-modal .modal { max-width: 640px; }
+.detail-content {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.9;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  background: var(--color-surface-alt);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.detail-words {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.detail-words .title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-sub);
+  margin-bottom: var(--space-2);
+}
+.detail-word-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  border-radius: 100px;
+  font-size: var(--text-sm);
+  margin: 0 6px 6px 0;
+}
+.detail-word-item .add-btn {
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(16,185,129,0.2);
+  color: var(--color-primary-hover);
+  cursor: pointer;
+}
+.detail-word-item .add-btn:hover { background: rgba(16,185,129,0.4); }
+.detail-word-item .add-btn svg { width: 12px; height: 12px; }
+</style>
+</head>
+<body data-page="dialogues">
+<div class="app-shell">
+
+  <!-- ============ App Shell / Sidebar Nav (identical on every page) ============ -->
+  <aside class="app-nav">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="brand-text">Memorize</div>
+        <div class="brand-sub">记单词 · 记对话</div>
+      </div>
+    </div>
+
+    <div class="nav-section-title">学习</div>
+    <ul class="nav-list">
+      <li><a class="nav-item" href="index.html" data-nav="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>首页</span>
+      </a></li>
+      <li><a class="nav-item" href="review.html" data-nav="review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>今日复习</span>
+        <span class="nav-badge" id="navDueCount">5</span>
+      </a></li>
+      <li><a class="nav-item" href="#" data-nav="new">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        <span>学习新单词</span>
+      </a></li>
+    </ul>
+
+    <div class="nav-section-title">素材库</div>
+    <ul class="nav-list">
+      <li><a class="nav-item" href="words.html" data-nav="words">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>单词本</span>
+      </a></li>
+      <li><a class="nav-item" href="dialogues.html" data-nav="dialogues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+        <span>对话集</span>
+      </a></li>
+    </ul>
+
+    <div class="nav-footer">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="#" data-nav="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>设置</span>
+        </a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ============ Main Content ============ -->
+  <main class="app-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">对话集</h1>
+        <p class="page-subtitle">共 <strong id="totalCount">0</strong> 段对话 · 手动粘贴/输入，支持关联生词</p>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        添加对话
+      </button>
+    </div>
+
+    <!-- Category filter -->
+    <div style="display:flex; gap:8px; margin-bottom: var(--space-6); flex-wrap: wrap; align-items:center;">
+      <button class="tag" data-cat="" onclick="filterCat('')" style="background: var(--color-primary-soft); color: var(--color-primary-hover);">全部</button>
+      <button class="tag" data-cat="电影/剧集" onclick="filterCat('电影/剧集')">电影/剧集</button>
+      <button class="tag" data-cat="书籍" onclick="filterCat('书籍')">书籍</button>
+      <button class="tag" data-cat="演讲" onclick="filterCat('演讲')">演讲</button>
+      <button class="tag" data-cat="日常/工作" onclick="filterCat('日常/工作')">日常/工作</button>
+    </div>
+
+    <!-- Dialogue cards -->
+    <div class="dialogue-grid" id="dialogueGrid"></div>
+
+  </main>
+</div>
+
+<!-- ============ Create Modal ============ -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>添加对话素材</h3>
+      <button class="modal-close" onclick="closeModal('createModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">标题 *</label>
+        <input class="form-input" id="dTitle" placeholder="例如: Friends S01E01 · 咖啡馆偶遇">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">来源</label>
+          <input class="form-input" id="dSource" placeholder="例如: Friends 老友记">
+        </div>
+        <div class="form-group">
+          <label class="form-label">分类</label>
+          <select class="form-input" id="dCategory">
+            <option>电影/剧集</option>
+            <option>书籍</option>
+            <option>演讲</option>
+            <option>日常/工作</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">对话内容 *</label>
+        <textarea class="form-textarea" id="dContent" style="min-height: 200px;" placeholder="粘贴或输入对话文本..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap: 12px; margin-top: var(--space-6);">
+        <button class="btn btn-outline" onclick="closeModal('createModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveDialogue()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Detail Modal ============ -->
+<div class="modal-overlay detail-modal" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="detailTitle">—</h3>
+        <div id="detailMeta" style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('detailModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-content" id="detailContent">—</div>
+      <div class="detail-words">
+        <div class="title">关联的生词</div>
+        <div id="detailWords">
+          <div style="color: var(--color-text-muted); font-size: var(--text-sm);">暂无关联生词 — 可以在单词本里把来源指向这段对话</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="mock.js"></script>
+<script src="api.js"></script>
+<script>
+/* --- Active nav state --- */
+document.querySelectorAll('.nav-item').forEach(item => {
+  if (item.dataset.nav === document.body.dataset.page) item.classList.add('active');
+});
+
+/* --- State --- */
+let currentCat = '';
+
+function filterCat(cat) {
+  currentCat = cat;
+  document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.style.background = btn.dataset.cat === cat ? 'var(--color-primary-soft)' : '';
+    btn.style.color = btn.dataset.cat === cat ? 'var(--color-primary-hover)' : '';
+  });
+  render();
+}
+
+async function render() {
+  const r = await fetchDialogues({ category: currentCat });
+  const list = r.data;
+  document.getElementById('totalCount').textContent = list.length;
+
+  const grid = document.getElementById('dialogueGrid');
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div class="title">还没有对话素材</div>
+      <div class="desc">粘贴电影台词、书籍段落或日常对话来积累素材</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(d => {
+    const firstLine = d.content.split('\n').filter(Boolean)[0] || '';
+    const date = new Date(d.updatedAt).toLocaleDateString('zh-CN');
+    return `
+      <div class="dialogue-card" onclick="showDetail('${d.id}')">
+        <div class="dialogue-source">${d.source || d.category}</div>
+        <div class="dialogue-title">${d.title}</div>
+        <div class="dialogue-preview">${firstLine.length > 80 ? firstLine.slice(0, 80) + '...' : firstLine}</div>
+        <div class="dialogue-meta">
+          <span>📅 ${date}</span>
+          <span>🔗 ${(d.wordIds || []).length} 个关联生词</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openCreateModal() { document.getElementById('createModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function saveDialogue() {
+  const payload = {
+    title: document.getElementById('dTitle').value.trim(),
+    source: document.getElementById('dSource').value.trim(),
+    category: document.getElementById('dCategory').value,
+    content: document.getElementById('dContent').value.trim()
+  };
+  if (!payload.title || !payload.content) { alert('标题和内容必填'); return; }
+  await createDialogue(payload);
+  closeModal('createModal');
+  document.getElementById('dTitle').value = '';
+  document.getElementById('dSource').value = '';
+  document.getElementById('dContent').value = '';
+  render();
+}
+
+function showDetail(id) {
+  const d = DB.dialogues.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('detailTitle').textContent = d.title;
+  document.getElementById('detailMeta').textContent = `${d.source || '—'} · ${d.category} · 更新于 ${new Date(d.updatedAt).toLocaleDateString('zh-CN')}`;
+  document.getElementById('detailContent').textContent = d.content;
+
+  // Show linked words
+  const linked = (d.wordIds || []).map(wid => DB.words.find(w => w.id === wid)).filter(Boolean);
+  if (linked.length > 0) {
+    document.getElementById('detailWords').innerHTML = linked.map(w => `
+      <span class="detail-word-item">
+        ${w.english} — ${w.chinese}
+        <button class="add-btn" onclick="alert('一键加入单词本 (已在单词本)')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </button>
+      </span>
+    `).join('');
+  } else {
+    document.getElementById('detailWords').innerHTML = '<div style="color: var(--color-text-muted); font-size: var(--text-sm);">暂无关联生词</div>';
+  }
+
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+render();
+</script>
+</body>
+</html>

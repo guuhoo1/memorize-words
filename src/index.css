@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --ig:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    @apply bg-bg text-ink font-sans;
+    line-height: 1.4;
+  }
+  * { @apply box-border; }
+  button { @apply cursor-pointer; }
+}
+
+@layer components {
+  .btn-primary{
+    @apply bg-ink text-white;
+  }
+  .btn-primary:hover{
+    @apply bg-[#2a2a2a];
+  }
+  .rail-btn{
+    @apply w-11 h-11 rounded-[14px] grid place-items-center text-[#b0b0b0] transition-colors relative;
+  }
+  .rail-btn:hover{ @apply bg-[#f5f5f5] text-ink; }
+  .rail-btn.active{ @apply bg-[#f5f5f5] text-ink; }
+  .rail-btn .dot{
+    @apply absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full;
+    background: var(--ig);
+  }
+  .chip{
+    @apply bg-white rounded-[13px] px-[14px] py-[10px] text-[13px] transition-colors;
+  }
+  .chip:hover{ @apply bg-[#f2f2f2]; }
+  .stat{
+    @apply bg-white rounded-[18px] px-3 py-[18px] text-center;
+  }
+  .form-field{
+    @apply bg-[#fafafa] border-none rounded-[12px] px-[13px] py-[11px] text-[14px] text-ink outline-none;
+    transition: background .2s;
+  }
+  .form-field:focus{ @apply bg-[#f2f2f2]; }
+}
+
+/* Flashcard 3D flip */
+.perspective-flash{ perspective: 1400px; }
+.flash-inner{
+  position: relative; width: 100%; height: 100%;
+  transition: transform .55s cubic-bezier(.4,.2,.2,1);
+  transform-style: preserve-3d;
+}
+.flashcard.flipped .flash-inner{ transform: rotateY(180deg); }
+.flash-face{ backface-visibility: hidden; }
+.flash-back{ transform: rotateY(180deg); }
+
+/* Score buttons */
+.ans-0{ background:#fff4f5; color:#d94a5f; }
+.ans-0:hover{ background:#ffe8eb; }
+.ans-1{ background:#fff9ee; color:#d18109; }
+.ans-1:hover{ background:#fdf0d9; }
+.ans-2{ background:#f2fbf5; color:#16934a; }
+.ans-2:hover{ background:#e3f6ea; }

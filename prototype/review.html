@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memorize · 今日复习</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* Page-specific: full-height review layout */
+.review-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--space-8) * 2);
+}
+.review-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+.review-progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width var(--duration-base) var(--ease-out);
+  border-radius: 2px;
+}
+.review-counter {
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+.review-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.review-completed {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+}
+.review-completed .emoji {
+  font-size: 64px;
+  margin-bottom: var(--space-4);
+}
+.review-completed h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.review-completed p {
+  color: var(--color-text-sub);
+}
+.review-completed .stats-row {
+  display: flex;
+  gap: var(--space-8);
+  justify-content: center;
+  margin: var(--space-8) 0;
+}
+.review-completed .stat-num {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.review-completed .stat-num.red { color: var(--color-danger); }
+.review-completed .stat-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
+  margin-top: 2px;
+}
+</style>
+</head>
+<body data-page="review">
+<div class="app-shell">
+
+  <!-- ============ App Shell / Sidebar Nav (identical on every page) ============ -->
+  <aside class="app-nav">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="brand-text">Memorize</div>
+        <div class="brand-sub">记单词 · 记对话</div>
+      </div>
+    </div>
+
+    <div class="nav-section-title">学习</div>
+    <ul class="nav-list">
+      <li><a class="nav-item" href="index.html" data-nav="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>首页</span>
+      </a></li>
+      <li><a class="nav-item" href="review.html" data-nav="review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>今日复习</span>
+        <span class="nav-badge" id="navDueCount">5</span>
+      </a></li>
+      <li><a class="nav-item" href="#" data-nav="new">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        <span>学习新单词</span>
+      </a></li>
+    </ul>
+
+    <div class="nav-section-title">素材库</div>
+    <ul class="nav-list">
+      <li><a class="nav-item" href="words.html" data-nav="words">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>单词本</span>
+      </a></li>
+      <li><a class="nav-item" href="dialogues.html" data-nav="dialogues">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+        <span>对话集</span>
+      </a></li>
+    </ul>
+
+    <div class="nav-footer">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="#" data-nav="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>设置</span>
+        </a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ============ Main Content ============ -->
+  <main class="app-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">今日复习</h1>
+        <p class="page-subtitle">点击卡片翻面查看释义 · 数字键 1-4 快速评分 · 空格翻面</p>
+      </div>
+    </div>
+
+    <div class="review-layout" id="reviewArea">
+      <!-- Dynamic content inserted by JS -->
+    </div>
+
+  </main>
+</div>
+
+<script src="mock.js"></script>
+<script src="api.js"></script>
+<script>
+/* --- Active nav state --- */
+document.querySelectorAll('.nav-item').forEach(item => {
+  if (item.dataset.nav === document.body.dataset.page) {
+    item.classList.add('active');
+  }
+});
+
+/* ============================================================
+   Review State Machine
+   ============================================================ */
+let queue = [];
+let currentIdx = 0;
+let flipped = false;
+let stats = { total: 0, correct: 0, again: 0 };
+
+const reviewArea = document.getElementById('reviewArea');
+
+async function init() {
+  const r = await fetchDueWords();
+  queue = r.data;
+  stats.total = queue.length;
+  document.getElementById('navDueCount').textContent = queue.length;
+
+  if (queue.length === 0) {
+    showEmpty();
+  } else {
+    render();
+  }
+}
+
+function showEmpty() {
+  reviewArea.innerHTML = `
+    <div class="review-completed">
+      <div class="emoji">🎉</div>
+      <h2>太棒了！今天的复习已经全部完成</h2>
+      <p>明天再见，记得坚持哦～</p>
+      <div style="margin-top: var(--space-8); display:flex; gap: 12px; justify-content:center;">
+        <a href="index.html" class="btn btn-outline">返回首页</a>
+        <a href="words.html" class="btn btn-primary">去添加新单词</a>
+      </div>
+    </div>`;
+}
+
+function showCompleted() {
+  const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+  reviewArea.innerHTML = `
+    <div class="review-completed">
+      <div class="emoji">✨</div>
+      <h2>今日复习完成！</h2>
+      <p>你完成了 ${stats.total} 个单词的复习</p>
+      <div class="stats-row">
+        <div>
+          <div class="stat-num">${stats.total - stats.again}</div>
+          <div class="stat-label">正确</div>
+        </div>
+        <div>
+          <div class="stat-num red">${stats.again}</div>
+          <div class="stat-label">需要再来</div>
+        </div>
+        <div>
+          <div class="stat-num">${accuracy}%</div>
+          <div class="stat-label">正确率</div>
+        </div>
+      </div>
+      <div style="display:flex; gap: 12px; justify-content:center;">
+        <a href="index.html" class="btn btn-outline">返回首页</a>
+        <button class="btn btn-primary" onclick="init()">再来一轮</button>
+      </div>
+    </div>`;
+}
+
+function render() {
+  if (currentIdx >= queue.length) { showCompleted(); return; }
+
+  flipped = false;
+  const word = queue[currentIdx];
+  const progress = ((currentIdx) / queue.length) * 100;
+
+  reviewArea.innerHTML = `
+    <div class="review-progress">
+      <div class="review-progress-bar" style="width: ${progress}%"></div>
+    </div>
+    <div class="review-counter">
+      第 <strong>${currentIdx + 1}</strong> / ${queue.length} 个
+    </div>
+
+    <div class="review-center">
+      <div class="flashcard-wrapper" id="flashcardWrapper">
+        <div class="flashcard" id="flashcard">
+          <!-- Front -->
+          <div class="flashcard-face front">
+            <div class="card-stage">
+              <span class="dot"></span>
+              待复习
+            </div>
+            <div class="card-word">${word.english}</div>
+            <button class="card-play" onclick="event.stopPropagation(); playSound('${word.english}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <div class="card-hint">点击卡片翻面 · 按空格</div>
+          </div>
+
+          <!-- Back -->
+          <div class="flashcard-face back">
+            <div class="card-stage">
+              <span class="dot"></span>
+              ${word.english}
+            </div>
+            <div class="card-phonetic">${word.phonetic || ''}</div>
+            <div class="card-chinese">${word.chinese}</div>
+            ${word.example ? `<div class="card-example"><span class="en">"${word.example}"</span></div>` : ''}
+            ${word.tags && word.tags.length ? `<div class="card-tags">${word.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Rating buttons (shown after flip) -->
+      <div class="rating-row" id="ratingRow" style="opacity: 0; pointer-events: none; transition: opacity 0.3s ease;">
+        <button class="rating-btn" data-grade="0" onclick="rate(0)">
+          <span class="label">Again</span>
+          <span class="interval">1 分钟</span>
+        </button>
+        <button class="rating-btn" data-grade="2" onclick="rate(2)">
+          <span class="label">Hard</span>
+          <span class="interval">1 天</span>
+        </button>
+        <button class="rating-btn" data-grade="4" onclick="rate(4)">
+          <span class="label">Good</span>
+          <span class="interval">6 天</span>
+        </button>
+        <button class="rating-btn" data-grade="5" onclick="rate(5)">
+          <span class="label">Easy</span>
+          <span class="interval">14 天</span>
+        </button>
+      </div>
+    </div>`;
+
+  // Flash on click
+  const card = document.getElementById('flashcard');
+  card.addEventListener('click', () => {
+    flipped = !flipped;
+    card.classList.toggle('flipped', flipped);
+    document.getElementById('ratingRow').style.opacity = flipped ? '1' : '0';
+    document.getElementById('ratingRow').style.pointerEvents = flipped ? 'auto' : 'none';
+  });
+}
+
+async function rate(grade) {
+  if (!flipped) return;
+  const word = queue[currentIdx];
+
+  // Submit to API (updates mock state)
+  await submitReview(word.id, grade);
+
+  // Update stats
+  if (grade < 3) {
+    stats.again++;
+  } else {
+    stats.correct++;
+  }
+
+  // Advance
+  currentIdx++;
+  render();
+}
+
+/* --- Web Speech --- */
+function playSound(text) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
+    utter.rate = 0.9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  } else {
+    alert('当前浏览器不支持语音合成');
+  }
+}
+
+/* --- Keyboard shortcuts --- */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (queue.length === 0 || currentIdx >= queue.length) return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!flipped) {
+      document.getElementById('flashcard').click();
+    }
+  } else if (flipped && ['1', '2', '3', '4'].includes(e.key)) {
+    const grades = [0, 2, 4, 5];
+    rate(grades[parseInt(e.key) - 1]);
+  }
+});
+
+init();
+</script>
+</body>
+</html>
