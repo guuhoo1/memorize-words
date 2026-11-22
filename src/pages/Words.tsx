@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/store/memorizeStore';
 import WordForm from '@/components/WordForm';
 import Modal from '@/components/Modal';
 import type { Word } from '@/types';
-import { Plus, Trash2, Play, Search, Pencil } from 'lucide-react';
+import { Plus, Trash2, Play, Search, Pencil, Volume2 } from 'lucide-react';
 
 export default function Words() {
   const words = useStore(s => s.words);
@@ -15,6 +15,16 @@ export default function Words() {
   const [tag, setTag] = useState<string>('');
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Word | null>(null);
+
+  // 预热 speech voices（某些浏览器 voices 异步加载）
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      const handler = () => window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener('voiceschanged', handler);
+      return () => window.speechSynthesis.removeEventListener('voiceschanged', handler);
+    }
+  }, []);
 
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -93,14 +103,24 @@ export default function Words() {
                   {w.phonetic && <span className="w-ph text-[12px] text-muted">{w.phonetic}</span>}
                   <button
                     onClick={e => { e.stopPropagation(); speak(w.english); }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-muted hover:text-ink"
+                    title="朗读单词"
+                    className="shrink-0 text-muted hover:text-ink transition-colors active:scale-90 touch-manipulation"
                   >
-                    <Play size={12} fill="currentColor" />
+                    <Volume2 size={13} />
                   </button>
                 </div>
                 <div className="w-cn text-[13px] text-[#3d3d3d] mt-[5px]">{w.chinese}</div>
                 {w.example && (
-                  <div className="w-ex text-[12px] text-muted mt-[4px] line-clamp-1">{w.example}</div>
+                  <div className="flex items-start gap-1.5 w-ex text-[12px] text-muted mt-[4px]">
+                    <button
+                      onClick={e => { e.stopPropagation(); speak(w.example!); }}
+                      title="朗读例句"
+                      className="shrink-0 text-muted hover:text-ink transition-colors active:scale-90 mt-0.5"
+                    >
+                      <Play size={10} fill="currentColor" />
+                    </button>
+                    <span className="line-clamp-2">{w.example}</span>
+                  </div>
                 )}
                 {w.tags.length > 0 && (
                   <div className="mt-[6px] flex gap-1.5">
@@ -183,11 +203,23 @@ function formatDue(ts?: string, repetitions?: number) {
   return `${diff} 天后`;
 }
 
-function speak(text: string) {
-  if ('speechSynthesis' in window) {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }
+function speak(text: string, lang = 'en-US') {
+  if (!text || !('speechSynthesis' in window)) return;
+  const ss = window.speechSynthesis;
+  ss.cancel();
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang;
+  u.rate = 0.95;
+  u.pitch = 1;
+
+  // 尝试找匹配 voice（voices 在某些浏览器里异步加载）
+  const voices = ss.getVoices();
+  const match = voices.find(v =>
+    v.lang.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]) &&
+    /en|US|GB/i.test(v.lang)
+  ) || voices.find(v => v.lang.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]));
+  if (match) u.voice = match;
+
+  ss.speak(u);
 }
