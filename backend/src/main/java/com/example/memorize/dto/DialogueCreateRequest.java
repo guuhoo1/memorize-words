@@ -1,0 +1,18 @@
+package com.example.memorize.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class DialogueCreateRequest {
+    @NotBlank(message = "标题不能为空")
+    private String title;
+
+    private String source;
+
+    @NotBlank(message = "分类不能为空")
+    private String category;
+
+    @NotBlank(message = "内容不能为空")
+    private String content;
+}
