@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
 import { dueWords } from '@/utils/sm2';
+import { speak, initSpeechVoices } from '@/utils/speech';
 import type { ReviewGrade } from '@/types';
 import { Home, RotateCcw, Volume2 } from 'lucide-react';
 
@@ -15,6 +16,8 @@ export default function Review() {
   const [flipped, setFlipped] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [againCount, setAgainCount] = useState(0);
+
+  useEffect(() => initSpeechVoices(), []);
 
   useEffect(() => {
     setQueue(dueWords(words));
@@ -202,12 +205,4 @@ export default function Review() {
   );
 }
 
-function speak(text: string) {
-  if ('speechSynthesis' in window) {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = 0.9;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }
-}
+

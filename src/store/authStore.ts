@@ -17,7 +17,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: localStorage.getItem(TOKEN_KEY),
       user: null,
       hydrated: false,
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       fetchMe: async () => {
-        if (!useAuthStore.getState().token) return;
+        if (!get().token) return;
         try {
           const user = await authApi.info();
           set({ user, hydrated: true });

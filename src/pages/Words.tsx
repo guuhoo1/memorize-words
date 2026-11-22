@@ -4,6 +4,7 @@ import WordForm from '@/components/WordForm';
 import Modal from '@/components/Modal';
 import type { Word } from '@/types';
 import { Plus, Trash2, Play, Search, Pencil, Volume2 } from 'lucide-react';
+import { speak, initSpeechVoices } from '@/utils/speech';
 
 export default function Words() {
   const words = useStore(s => s.words);
@@ -16,15 +17,7 @@ export default function Words() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Word | null>(null);
 
-  // 预热 speech voices（某些浏览器 voices 异步加载）
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      const handler = () => window.speechSynthesis.getVoices();
-      window.speechSynthesis.addEventListener('voiceschanged', handler);
-      return () => window.speechSynthesis.removeEventListener('voiceschanged', handler);
-    }
-  }, []);
+  useEffect(() => initSpeechVoices(), []);
 
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -203,23 +196,4 @@ function formatDue(ts?: string, repetitions?: number) {
   return `${diff} 天后`;
 }
 
-function speak(text: string, lang = 'en-US') {
-  if (!text || !('speechSynthesis' in window)) return;
-  const ss = window.speechSynthesis;
-  ss.cancel();
 
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang;
-  u.rate = 0.95;
-  u.pitch = 1;
-
-  // 尝试找匹配 voice（voices 在某些浏览器里异步加载）
-  const voices = ss.getVoices();
-  const match = voices.find(v =>
-    v.lang.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]) &&
-    /en|US|GB/i.test(v.lang)
-  ) || voices.find(v => v.lang.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]));
-  if (match) u.voice = match;
-
-  ss.speak(u);
-}
