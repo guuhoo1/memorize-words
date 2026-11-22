@@ -39,8 +39,8 @@ export default function Review() {
       if (e.code === 'Space') {
         e.preventDefault();
         if (!flipped) setFlipped(true);
-      } else if (flipped && ['1', '2', '3'].includes(e.key)) {
-        const grades: ReviewGrade[] = [0, 2, 4];
+      } else if (flipped && ['1', '2', '3', '4'].includes(e.key)) {
+        const grades: ReviewGrade[] = [0, 2, 4, 5];
         handleRate(grades[parseInt(e.key) - 1]);
       }
     };
@@ -110,8 +110,7 @@ export default function Review() {
         <div>
           <h2 className="text-[20px] font-semibold tracking-tight text-ink">今日复习</h2>
           <p className="text-[13px] text-muted mt-[5px]">
-            第 {idx + 1} / {queue.length} 个
-            &nbsp;·&nbsp; 空格翻面 · 1=再来 / 2=困难 / 3=还行
+            第 {idx + 1} / {queue.length} 个 · 空格翻面 · 1=再来 / 2=困难 / 3=还行 / 4=简单
           </p>
         </div>
       </header>
@@ -134,7 +133,7 @@ export default function Review() {
               <div className="flash-word text-[40px] font-semibold tracking-[-1.2px] text-ink">
                 {current.english}
               </div>
-              <div className="flash-hint text-[11px] text-[#c8c8c8] tracking-[0.3px] mt-[10px]">
+              <div className="flash-hint text-[12px] text-neutral-400 tracking-wide mt-[4px]">
                 点击卡片翻面 · 空格
               </div>
             </div>
@@ -168,28 +167,35 @@ export default function Review() {
 
       {/* Rating */}
       <div
-        className={`grid grid-cols-3 gap-[9px] transition-opacity duration-300 ${flipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`grid grid-cols-4 gap-[9px] transition-all duration-300 ${flipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
       >
         <button
           onClick={() => handleRate(0)}
-          className="ans ans-0 py-[15px] rounded-[16px] text-[13.5px] font-medium"
+          className="ans ans-0 py-[14px] rounded-[14px] text-[13.5px] font-medium flex flex-col items-center gap-[3px]"
         >
-          再来
-          <div className="text-[11px] opacity-60 mt-0.5 font-normal">1 分钟</div>
+          <span>再来</span>
+          <span className="text-[11px] opacity-55 font-normal">立即复习</span>
         </button>
         <button
           onClick={() => handleRate(2)}
-          className="ans ans-1 py-[15px] rounded-[16px] text-[13.5px] font-medium"
+          className="ans ans-1 py-[14px] rounded-[14px] text-[13.5px] font-medium flex flex-col items-center gap-[3px]"
         >
-          困难
-          <div className="text-[11px] opacity-60 mt-0.5 font-normal">6 天后</div>
+          <span>困难</span>
+          <span className="text-[11px] opacity-55 font-normal">1 天</span>
         </button>
         <button
           onClick={() => handleRate(4)}
-          className="ans ans-2 py-[15px] rounded-[16px] text-[13.5px] font-medium"
+          className="ans ans-2 py-[14px] rounded-[14px] text-[13.5px] font-medium flex flex-col items-center gap-[3px]"
         >
-          还行
-          <div className="text-[11px] opacity-60 mt-0.5 font-normal">14 天后</div>
+          <span>还行</span>
+          <span className="text-[11px] opacity-55 font-normal">6 天</span>
+        </button>
+        <button
+          onClick={() => handleRate(5)}
+          className="ans ans-3 py-[14px] rounded-[14px] text-[13.5px] font-medium flex flex-col items-center gap-[3px]"
+        >
+          <span>简单</span>
+          <span className="text-[11px] opacity-55 font-normal">14 天+</span>
         </button>
       </div>
     </div>

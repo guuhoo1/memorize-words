@@ -1,15 +1,20 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
-import { Plus, Trash2, Play, Search } from 'lucide-react';
+import WordForm from '@/components/WordForm';
+import Modal from '@/components/Modal';
+import type { Word } from '@/types';
+import { Plus, Trash2, Play, Search, Pencil } from 'lucide-react';
 
 export default function Words() {
   const words = useStore(s => s.words);
+  const addWord = useStore(s => s.addWord);
+  const updateWord = useStore(s => s.updateWord);
   const deleteWord = useStore(s => s.deleteWord);
-  const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
   const [tag, setTag] = useState<string>('');
+  const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<Word | null>(null);
 
   const allTags = useMemo(() => {
     const s = new Set<string>();
@@ -40,7 +45,7 @@ export default function Words() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/words/new')}
+          onClick={() => setShowAdd(true)}
           className="btn btn-primary px-4 py-[9px] rounded-[12px] text-[13px] font-medium"
         >
           <Plus size={15} className="inline mr-1.5 -mt-0.5" /> 添加单词
@@ -65,8 +70,8 @@ export default function Words() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="搜索..."
-            className="w-[180px] form-field text-[13px] py-2"
+            placeholder="搜索英文或中文..."
+            className="w-[200px] form-field text-[13px] py-2"
           />
         </div>
       </div>
@@ -79,8 +84,8 @@ export default function Words() {
           {filtered.map(w => (
             <div
               key={w.id}
-              onClick={() => navigate(`/words/${w.id}`)}
-              className="flex justify-between gap-4 py-4 border-b border-line first:pt-1 cursor-pointer group"
+              onClick={() => setEditing(w)}
+              className="flex justify-between gap-4 py-4 border-b border-line first:pt-1 cursor-pointer group hover:bg-black/[0.015] rounded-lg px-2 -mx-2 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
@@ -111,27 +116,68 @@ export default function Words() {
                     <i key={i} className={`w-[6px] h-[6px] rounded-full ${i < Math.min(w.repetitions + 1, 5) ? 'bg-ink' : 'bg-[#e8e8e8]'}`} />
                   ))}
                 </div>
-                <span className="w-due text-[11px] text-muted">{formatDue(w.nextReview)}</span>
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (confirm(`确定删除 "${w.english}"？`)) deleteWord(w.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-[#d94a5f]"
-                >
-                  <Trash2 size={13} />
-                </button>
+                <span className="w-due text-[11px] text-muted">{formatDue(w.nextReview, w.repetitions)}</span>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 items-center">
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditing(w); }}
+                    className="text-muted hover:text-ink"
+                    title="编辑"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (confirm(`确定删除 "${w.english}"？`)) deleteWord(w.id);
+                    }}
+                    className="text-muted hover:text-[#d94a5f]"
+                    title="删除"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* 添加 Modal */}
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="添加新单词" size="md">
+        <WordForm
+          onSubmit={async (data) => {
+            await addWord(data);
+            setShowAdd(false);
+          }}
+          onCancel={() => setShowAdd(false)}
+        />
+      </Modal>
+
+      {/* 编辑 Modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="编辑单词" size="md">
+        {editing && (
+          <WordForm
+            key={editing.id}
+            initial={editing}
+            onSubmit={async (data) => {
+              await updateWord(editing.id, data);
+              setEditing(null);
+            }}
+            onCancel={() => setEditing(null)}
+            onDelete={async () => {
+              await deleteWord(editing.id);
+              setEditing(null);
+            }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
 
-function formatDue(ts: number) {
-  const diff = Math.ceil((ts - Date.now()) / 86400000);
+function formatDue(ts?: string, repetitions?: number) {
+  if (repetitions === 0 || !ts) return '待复习';
+  const diff = Math.ceil((new Date(ts).getTime() - Date.now()) / 86400000);
   if (diff < 0) return '已到期';
   if (diff === 0) return '今天';
   return `${diff} 天后`;

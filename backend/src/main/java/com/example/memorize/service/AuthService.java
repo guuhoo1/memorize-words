@@ -56,4 +56,15 @@ public class AuthService {
     public void logout() {
         StpUtil.logout();
     }
+
+    public SysUser updateProfile(String nickname, String avatar) {
+        Long id = Long.parseLong(String.valueOf(StpUtil.getLoginId()));
+        SysUser user = userMapper.selectById(id);
+        if (nickname != null) user.setNickname(nickname);
+        if (avatar != null) user.setAvatar(avatar);
+        userMapper.updateById(user);
+        // 刷新 token 里的登录态（保持 id）
+        StpUtil.login(id);
+        return user;
+    }
 }

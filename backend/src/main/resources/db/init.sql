@@ -1,11 +1,12 @@
 -- memorize-words 建库 SQL
--- 手动执行：mysql -u memorize_words -pmemorize_words123 memorize_words < init.sql
+-- 手动执行：mysql -u root -p123456 memorize-words < init.sql
 
 CREATE TABLE IF NOT EXISTS sys_user (
   id              BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
   username        VARCHAR(64)  NOT NULL UNIQUE,
   password_hash   VARCHAR(128) NOT NULL,
   nickname        VARCHAR(64),
+  avatar          VARCHAR(512) COMMENT '头像URL或emoji',
   created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) COMMENT '用户';
@@ -55,3 +56,15 @@ CREATE TABLE IF NOT EXISTS review_record (
   CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES sys_user(id) ON DELETE CASCADE,
   CONSTRAINT fk_review_word FOREIGN KEY (word_id) REFERENCES word(id) ON DELETE CASCADE
 ) COMMENT '复习历史';
+
+CREATE TABLE IF NOT EXISTS sys_dict_item (
+  id          BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id     BIGINT       NOT NULL,
+  dict_type   VARCHAR(64)  NOT NULL COMMENT '字典类型：dialogue_category / word_tag',
+  item_label  VARCHAR(128) NOT NULL COMMENT '显示值',
+  sort_order  INT          NOT NULL DEFAULT 0,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_type_label (user_id, dict_type, item_label),
+  INDEX idx_dict_user_type (user_id, dict_type),
+  CONSTRAINT fk_dict_user FOREIGN KEY (user_id) REFERENCES sys_user(id) ON DELETE CASCADE
+) COMMENT '用户自定义字典（分类、标签建议等）';

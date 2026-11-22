@@ -1,5 +1,6 @@
 package com.example.memorize.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -15,6 +16,10 @@ public class WordCreateRequest {
 
     private String phonetic;
     private String example;
+
+    /** 兼容数组 / 单个字符串 / 逗号分隔字符串 */
+    @JsonDeserialize(using = FlexibleTagListDeserializer.class)
     private List<String> tags;
+
     private Long sourceDialogueId;
 }

@@ -8,7 +8,7 @@ export default function DialogueDetail() {
   const dialogues = useStore(s => s.dialogues);
   const words = useStore(s => s.words);
 
-  const d = dialogues.find(x => x.id === id);
+  const d = dialogues.find(x => x.id === Number(id));
 
   if (!d) {
     return (
@@ -19,18 +19,28 @@ export default function DialogueDetail() {
     );
   }
 
-  const linkedWords = d.wordIds.map(wid => words.find(w => w.id === wid)).filter(Boolean);
+  // 关联生词：word.sourceDialogueId === d.id
+  const linkedWords = words.filter(w => w.sourceDialogueId === d.id);
 
-  // Parse content into lines (speaker: text format or alternating)
   const rawLines = d.content.split('\n').filter(Boolean);
+
+  // speaker → 颜色映射（稳定 hash）
+  const speakerColors: Record<string, string> = {};
+  const palette = ['#5b7bff', '#dc2743', '#16934a', '#bc1888', '#f09433', '#6f5bf7'];
+  let colorIdx = 0;
+
   const parsedLines = rawLines.map((line, i) => {
     const colonIdx = line.indexOf(':');
     let speaker = '', text = line;
     if (colonIdx > 0 && colonIdx < 12) {
       speaker = line.slice(0, colonIdx).trim();
       text = line.slice(colonIdx + 1).trim();
+      if (speaker && !speakerColors[speaker]) {
+        speakerColors[speaker] = palette[colorIdx % palette.length];
+        colorIdx++;
+      }
     }
-    return { speaker, text, isRight: i % 2 === 1 }; // alternating
+    return { speaker, text, isRight: i % 2 === 1 };
   });
 
   return (
@@ -48,20 +58,22 @@ export default function DialogueDetail() {
         </div>
         <h3 className="text-[17px] font-semibold mt-[10px]">{d.title}</h3>
         <div className="muted text-[12px] text-muted mt-1">
-          更新于 {new Date(d.updatedAt).toLocaleDateString('zh-CN')}
+          更新于 {d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('zh-CN') : ''}
         </div>
       </div>
 
-      {/* Chat bubbles */}
       <div className="lines flex flex-col">
         {parsedLines.map((line, i) => (
           <div key={i} className={`line flex gap-2 max-w-[84%] mb-[14px] ${line.isRight ? 'right ml-auto flex-row-reverse' : ''}`}>
             {line.speaker && (
-              <div className="avatar w-[28px] h-[28px] rounded-full grid place-items-center text-[11px] font-semibold bg-[#f0f0f0] text-[#7a7a7a]">
+              <div
+                className="avatar w-[28px] h-[28px] rounded-full grid place-items-center text-[11px] font-semibold text-white flex-shrink-0"
+                style={{ background: speakerColors[line.speaker] ?? '#f0f0f0' }}
+              >
                 {line.speaker.slice(0, 1).toUpperCase()}
               </div>
             )}
-            {!line.speaker && <div className="avatar w-[28px] h-[28px]" />}
+            {!line.speaker && <div className="avatar w-[28px] h-[28px] flex-shrink-0" />}
             <div>
               <div className={`bubble rounded-[18px] px-[15px] py-[11px] text-[14px] leading-[1.5] ${
                 line.isRight ? 'bg-ink text-white' : 'bg-[#f5f5f5] text-ink'
@@ -73,26 +85,24 @@ export default function DialogueDetail() {
         ))}
       </div>
 
-      {/* Linked words */}
       {linkedWords.length > 0 && (
         <div className="mt-6 pt-6 border-t border-line">
           <h3 className="text-[11px] font-semibold text-muted tracking-wider uppercase mb-3">关联生词 ({linkedWords.length})</h3>
           <div className="flex flex-wrap gap-2">
             {linkedWords.map(w => (
               <button
-                key={w!.id}
-                onClick={() => navigate(`/words/${w!.id}`)}
+                key={w.id}
+                onClick={() => navigate(`/words/${w.id}`)}
                 className="chip"
               >
-                <b className="font-semibold mr-1.5">{w!.english}</b>
-                {w!.chinese}
+                <b className="font-semibold mr-1.5">{w.english}</b>
+                {w.chinese}
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Quick add */}
       <div className="mt-6">
         <button
           onClick={() => navigate('/words/new')}

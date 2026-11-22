@@ -1,11 +1,14 @@
 package com.example.memorize.config;
 
 import com.example.memorize.entity.Dialogue;
+import com.example.memorize.entity.DictItem;
 import com.example.memorize.entity.SysUser;
 import com.example.memorize.entity.Word;
 import com.example.memorize.mapper.DialogueMapper;
+import com.example.memorize.mapper.DictItemMapper;
 import com.example.memorize.mapper.SysUserMapper;
 import com.example.memorize.mapper.WordMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,10 +17,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * 首次启动时灌入 admin 用户 + mock 单词 + mock 对话
- * 仅在 sys_user 表为空时执行（幂等）
+ * 首次启动时灌入 admin 用户 + mock 单词 + mock 对话 + 默认字典
+ * 字典种子幂等：对每个现有用户若字典表为空则灌
  */
 @Slf4j
 @Configuration
@@ -27,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
     private final SysUserMapper userMapper;
     private final WordMapper wordMapper;
     private final DialogueMapper dialogueMapper;
+    private final DictItemMapper dictMapper;
 
     @Value("${app.admin-username:admin}")
     private String adminUsername;
@@ -36,14 +42,23 @@ public class DataSeeder implements CommandLineRunner {
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+    private static final String[] DEFAULT_CATEGORIES = {"电影/剧集", "书籍", "演讲", "日常/工作"};
+    private static final String[] DEFAULT_TAGS = {"CET4", "CET6", "雅思", "托福", "GRE", "考研"};
+
     @Override
     public void run(String... args) {
-        if (userMapper.selectCount(null) > 0) {
-            log.info("[DataSeeder] 数据库非空，跳过种子数据");
-            return;
+        long userCount = userMapper.selectCount(null);
+        if (userCount == 0) {
+            log.info("[DataSeeder] 开始灌入种子数据...");
+            seedUserWordsDialogues();
+        } else {
+            log.info("[DataSeeder] 数据库已存在 {} 用户，跳过种子数据", userCount);
         }
-        log.info("[DataSeeder] 开始灌入种子数据...");
+        // 字典对每个现有用户幂等补灌
+        seedDictsForAllUsers();
+    }
 
+    private void seedUserWordsDialogues() {
         SysUser admin = new SysUser();
         admin.setUsername(adminUsername);
         admin.setPasswordHash(encoder.encode(adminPassword));
@@ -92,6 +107,36 @@ public class DataSeeder implements CommandLineRunner {
         for (Word w : words) wordMapper.insert(w);
 
         log.info("[DataSeeder] 完成：admin={}，单词={}，对话={}", adminUsername, words.length, 2);
+    }
+
+    private void seedDictsForAllUsers() {
+        List<SysUser> users = userMapper.selectList(null);
+        for (SysUser u : users) {
+            Long uid = u.getId();
+            // 字典为空才灌
+            long cnt = dictMapper.selectCount(new LambdaQueryWrapper<DictItem>().eq(DictItem::getUserId, uid));
+            if (cnt > 0) continue;
+
+            int order = 0;
+            for (String c : DEFAULT_CATEGORIES) {
+                DictItem d = new DictItem();
+                d.setUserId(uid);
+                d.setDictType("dialogue_category");
+                d.setItemLabel(c);
+                d.setSortOrder(order++);
+                dictMapper.insert(d);
+            }
+            order = 0;
+            for (String t : DEFAULT_TAGS) {
+                DictItem d = new DictItem();
+                d.setUserId(uid);
+                d.setDictType("word_tag");
+                d.setItemLabel(t);
+                d.setSortOrder(order++);
+                dictMapper.insert(d);
+            }
+            log.info("[DataSeeder] 用户 {} 字典已灌入 ({} categories + {} tags)", uid, DEFAULT_CATEGORIES.length, DEFAULT_TAGS.length);
+        }
     }
 
     private Word makeWord(Long uid, String en, String zh, String phon, String ex, String tags, Long srcDialogueId) {

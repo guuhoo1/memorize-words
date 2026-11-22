@@ -11,11 +11,11 @@ export default function Dashboard() {
   const mastered = words.filter(w => w.repetitions >= 4).length;
 
   const recentWords = [...words]
-    .sort((a, b) => b.createdAt - a.createdAt)
+    .sort((a, b) => (b.createdAt ? Date.parse(b.createdAt) : 0) - (a.createdAt ? Date.parse(a.createdAt) : 0))
     .slice(0, 8);
 
   const recentDialogues = [...dialogues]
-    .sort((a, b) => b.createdAt - a.createdAt)
+    .sort((a, b) => (b.createdAt ? Date.parse(b.createdAt) : 0) - (a.createdAt ? Date.parse(a.createdAt) : 0))
     .slice(0, 6);
 
   return (

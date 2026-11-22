@@ -1,7 +1,7 @@
-// Core domain types
+// Core domain types — 与后端 MySQL / Spring Boot 接口对齐
 
 export interface Word {
-  id: string;
+  id: number;
   english: string;
   chinese: string;
   phonetic?: string;
@@ -10,26 +10,25 @@ export interface Word {
 
   // SM-2 spaced repetition fields
   easeFactor: number;
-  interval: number; // days
+  intervalDays: number;
   repetitions: number;
 
-  nextReview: number; // timestamp ms
-  lastReview?: number;
+  nextReview?: string;       // ISO datetime
+  lastReview?: string;
+  sourceDialogueId?: number;
 
-  createdAt: number;
-  updatedAt: number;
-  source?: string; // dialogue id
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Dialogue {
-  id: string;
+  id: number;
   title: string;
   source?: string;
   category: DialogueCategory;
   content: string;
-  wordIds: string[];
-  createdAt: number;
-  updatedAt: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type DialogueCategory =
@@ -39,16 +38,16 @@ export type DialogueCategory =
   | '日常/工作';
 
 export interface ReviewRecord {
-  wordId: string;
+  id?: number;
+  wordId: number;
   grade: number;
-  reviewedAt: number;
+  reviewedAt?: string;
 }
 
 export interface AppState {
   words: Word[];
   dialogues: Dialogue[];
   reviewHistory: ReviewRecord[];
-  version: number;
 }
 
 export type ReviewGrade = 0 | 2 | 4 | 5;

@@ -1,9 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Word, Dialogue, ReviewRecord, ReviewGrade, DialogueCategory } from '@/types';
-import { sm2 } from '@/utils/sm2';
-import { generateId } from '@/utils/storage';
-import { defaultState } from '@/data/mock';
+import { wordsApi, dialoguesApi, reviewApi } from '@/utils/api';
+import type { Word, Dialogue, ReviewRecord, DialogueCategory } from '@/types';
 
 interface AddWordInput {
   english: string;
@@ -11,7 +8,7 @@ interface AddWordInput {
   phonetic?: string;
   example?: string;
   tags?: string[];
-  source?: string;
+  sourceDialogueId?: number;
 }
 
 interface MemorizeStore {
@@ -19,131 +16,90 @@ interface MemorizeStore {
   words: Word[];
   dialogues: Dialogue[];
   reviewHistory: ReviewRecord[];
-  version: number;
+  loading: boolean;
+  loaded: boolean;
+
+  // init
+  reload: () => Promise<void>;
 
   // words
-  addWord: (data: AddWordInput) => Word;
-  updateWord: (id: string, patch: Partial<Word>) => void;
-  deleteWord: (id: string) => void;
+  addWord: (data: AddWordInput) => Promise<Word>;
+  updateWord: (id: number, patch: Partial<Word>) => Promise<Word>;
+  deleteWord: (id: number) => Promise<void>;
+  dueWords: () => Promise<Word[]>;
 
   // dialogues
-  addDialogue: (data: { title: string; source?: string; category: DialogueCategory; content: string }) => Dialogue;
-  updateDialogue: (id: string, patch: Partial<Dialogue>) => void;
-  deleteDialogue: (id: string) => void;
+  addDialogue: (data: { title: string; source?: string; category: DialogueCategory; content: string }) => Promise<Dialogue>;
+  updateDialogue: (id: number, patch: Partial<Dialogue>) => Promise<Dialogue>;
+  deleteDialogue: (id: number) => Promise<void>;
 
   // review
-  submitReview: (wordId: string, grade: ReviewGrade) => void;
-
-  // misc
-  resetAll: () => void;
+  submitReview: (wordId: number, grade: number) => Promise<Word>;
 }
 
-export const useStore = create<MemorizeStore>()(
-  persist(
-    (set, get) => ({
-      ...defaultState,
+export const useStore = create<MemorizeStore>((set, get) => ({
+  words: [],
+  dialogues: [],
+  reviewHistory: [],
+  loading: false,
+  loaded: false,
 
-      addWord: (data) => {
-        const now = Date.now();
-        const word: Word = {
-          id: generateId('w'),
-          english: data.english,
-          chinese: data.chinese,
-          phonetic: data.phonetic,
-          example: data.example,
-          tags: data.tags ?? [],
-          easeFactor: 2.5,
-          interval: 0,
-          repetitions: 0,
-          nextReview: now,
-          createdAt: now,
-          updatedAt: now,
-          source: data.source
-        };
-        set({ words: [word, ...get().words] });
-        return word;
-      },
-
-      updateWord: (id, patch) =>
-        set({
-          words: get().words.map(w =>
-            w.id === id ? { ...w, ...patch, updatedAt: Date.now() } : w
-          )
-        }),
-
-      deleteWord: (id) =>
-        set({
-          words: get().words.filter(w => w.id !== id),
-          dialogues: get().dialogues.map(d => ({
-            ...d,
-            wordIds: d.wordIds.filter(wid => wid !== id)
-          }))
-        }),
-
-      addDialogue: (data) => {
-        const now = Date.now();
-        const d: Dialogue = {
-          id: generateId('d'),
-          title: data.title,
-          source: data.source,
-          category: data.category,
-          content: data.content,
-          wordIds: [],
-          createdAt: now,
-          updatedAt: now
-        };
-        set({ dialogues: [d, ...get().dialogues] });
-        return d;
-      },
-
-      updateDialogue: (id, patch) =>
-        set({
-          dialogues: get().dialogues.map(d =>
-            d.id === id ? { ...d, ...patch, updatedAt: Date.now() } : d
-          )
-        }),
-
-      deleteDialogue: (id) =>
-        set({ dialogues: get().dialogues.filter(d => d.id !== id) }),
-
-      submitReview: (wordId, grade) => {
-        const { words, reviewHistory } = get();
-        const word = words.find(w => w.id === wordId);
-        if (!word) return;
-        const updated = sm2(word, grade);
-        const now = Date.now();
-        set({
-          words: words.map(w =>
-            w.id === wordId
-              ? {
-                  ...w,
-                  easeFactor: updated.easeFactor,
-                  interval: updated.interval,
-                  repetitions: updated.repetitions,
-                  nextReview: updated.nextReview,
-                  lastReview: now,
-                  updatedAt: now
-                }
-              : w
-          ),
-          reviewHistory: [...reviewHistory, { wordId, grade, reviewedAt: now } as ReviewRecord]
-        });
-      },
-
-      resetAll: () => {
-        localStorage.removeItem('memorize-words:v1');
-        location.reload();
-      }
-    }),
-    {
-      name: 'memorize-words:v1',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        words: state.words,
-        dialogues: state.dialogues,
-        reviewHistory: state.reviewHistory,
-        version: state.version
-      })
+  reload: async () => {
+    set({ loading: true });
+    try {
+      const [words, dialogues] = await Promise.all([wordsApi.list(), dialoguesApi.list()]);
+      set({ words, dialogues, loaded: true, loading: false });
+    } catch {
+      set({ loading: false });
+      throw new Error('加载数据失败');
     }
-  )
-);
+  },
+
+  addWord: async (data) => {
+    const word = await wordsApi.create(data);
+    set({ words: [word, ...get().words] });
+    return word;
+  },
+
+  updateWord: async (id, patch) => {
+    const word = await wordsApi.update(id, patch as any);
+    set({ words: get().words.map(w => (w.id === id ? word : w)) });
+    return word;
+  },
+
+  deleteWord: async (id) => {
+    await wordsApi.remove(id);
+    set({
+      words: get().words.filter(w => w.id !== id)
+    });
+  },
+
+  dueWords: async () => reviewApi.due(),
+
+  addDialogue: async (data) => {
+    const d = await dialoguesApi.create(data);
+    set({ dialogues: [d, ...get().dialogues] });
+    return d;
+  },
+
+  updateDialogue: async (id, patch) => {
+    const d = await dialoguesApi.update(id, patch as any);
+    set({ dialogues: get().dialogues.map(x => (x.id === id ? d : x)) });
+    return d;
+  },
+
+  deleteDialogue: async (id) => {
+    await dialoguesApi.remove(id);
+    set({ dialogues: get().dialogues.filter(x => x.id !== id) });
+  },
+
+  submitReview: async (wordId, grade) => {
+    const updated = await reviewApi.submit(wordId, grade);
+    const history = await reviewApi.history();
+    set({
+      words: get().words.map(w => (w.id === wordId ? updated : w)),
+      reviewHistory: history
+    });
+    return updated;
+  }
+}));

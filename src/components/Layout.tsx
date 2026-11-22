@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
+import { useAuthStore } from '@/store/authStore';
 import { dueWords } from '@/utils/sm2';
 import { Home, CalendarCheck, BookOpen, MessageSquare } from 'lucide-react';
 
@@ -10,22 +11,41 @@ const navItems = [
   { to: '/dialogues', icon: MessageSquare, label: '对话库' }
 ];
 
+/** 判断头像字符串是否为图片（URL 或相对路径） */
+function isImageAvatar(raw: string | undefined): boolean {
+  if (!raw) return false;
+  if (/\p{Extended_Pictographic}/u.test(raw)) return false; // emoji 不用当图片渲染
+  return raw.startsWith('http') || raw.startsWith('/') || raw.startsWith('data:image');
+}
+
 export default function Layout() {
   const words = useStore(s => s.words);
   const navigate = useNavigate();
+  const user = useAuthStore(s => s.user);
   const due = dueWords(words).length;
+
+  // 头像渲染：emoji / URL 图片 / 相对路径图片 / 用户名首字
+  const renderAvatar = () => {
+    const raw = user?.avatar?.trim();
+    if (!raw) return <span className="text-[16px] font-semibold text-neutral-700">{user?.username?.[0]?.toUpperCase() || '?'}</span>;
+    if (/\p{Extended_Pictographic}/u.test(raw)) return <span className="text-[20px]">{raw}</span>;
+    // http / /uploads/xxx / data:image 都当图片
+    if (isImageAvatar(raw)) return <img src={raw} alt="avatar" className="w-full h-full object-cover rounded-full" onError={e => (e.currentTarget.style.display = 'none')} />;
+    return <span className="text-[16px] font-semibold text-neutral-700">{raw[0].toUpperCase()}</span>;
+  };
 
   return (
     <div className="flex min-h-screen bg-bg">
       {/* Rail - 72px narrow icon bar */}
       <nav className="w-[72px] flex-shrink-0 bg-white border-r border-line sticky top-0 h-screen flex flex-col items-center gap-1.5 py-[22px]">
-        {/* Logo */}
-        <div
-          className="w-[38px] h-[38px] rounded-full grid place-items-center text-white text-[16px] font-semibold mb-5 tracking-[-0.5px]"
-          style={{ background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)' }}
+        {/* 顶部：头像 */}
+        <button
+          onClick={() => navigate('/profile')}
+          title="个人信息"
+          className="w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 grid place-items-center overflow-hidden transition-colors ring-2 ring-transparent hover:ring-neutral-300"
         >
-          词
-        </div>
+          {renderAvatar()}
+        </button>
 
         {navItems.map(item => {
           const Icon = item.icon;
@@ -34,20 +54,21 @@ export default function Layout() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              title={item.label}
               className={({ isActive }) =>
                 [
-                  'rail-btn',
+                  'rail-btn group relative flex flex-col items-center gap-[3px]',
                   isActive ? 'active' : ''
                 ].join(' ')
               }
             >
               <Icon size={22} strokeWidth={1.6} />
+              <span className="text-[10px] text-[#9a9a9a] group-hover:text-ink leading-none">{item.label}</span>
               {item.badge && due > 0 && <span className="dot" />}
             </NavLink>
           );
         })}
 
+        {/* 底部：设置 */}
         <button
           onClick={() => navigate('/settings')}
           title="设置"
@@ -59,7 +80,7 @@ export default function Layout() {
 
       {/* Main */}
       <main className="flex-1 px-6 pb-[90px]">
-        <div className="max-w-[600px] mx-auto pt-10">
+        <div className="max-w-[1200px] mx-auto pt-10">
           <Outlet />
         </div>
       </main>

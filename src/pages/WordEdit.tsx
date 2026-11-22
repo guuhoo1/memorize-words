@@ -9,9 +9,9 @@ export default function WordEdit() {
   const words = useStore(s => s.words);
   const addWord = useStore(s => s.addWord);
   const updateWord = useStore(s => s.updateWord);
+  const isEdit = !!id;
 
-  const existing = id ? words.find(w => w.id === id) : undefined;
-  const isEdit = !!existing;
+  const existing = id ? words.find(w => w.id === Number(id)) : undefined;
 
   const [english, setEnglish] = useState(existing?.english ?? '');
   const [chinese, setChinese] = useState(existing?.chinese ?? '');
@@ -19,16 +19,20 @@ export default function WordEdit() {
   const [example, setExample] = useState(existing?.example ?? '');
   const [tagsInput, setTagsInput] = useState(existing?.tags.join(', ') ?? '');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!english.trim() || !chinese.trim()) return;
     const tags = tagsInput.split(',').map(s => s.trim()).filter(Boolean);
-    if (isEdit && existing) {
-      updateWord(existing.id, { english, chinese, phonetic, example, tags });
-    } else {
-      addWord({ english, chinese, phonetic, example, tags });
+    try {
+      if (isEdit && id) {
+        await updateWord(Number(id), { english, chinese, phonetic, example, tags });
+      } else {
+        await addWord({ english, chinese, phonetic, example, tags });
+      }
+      navigate('/words');
+    } catch (err: any) {
+      alert(err?.message || '保存失败');
     }
-    navigate('/words');
   };
 
   return (
@@ -49,32 +53,27 @@ export default function WordEdit() {
           <div className="field col-span-full">
             <label className="text-[11px] text-muted tracking-wide">英文 *</label>
             <input type="text" value={english} onChange={e => setEnglish(e.target.value)}
-              className="form-field mt-1.5"
-              placeholder="serendipity" required />
+              className="form-field mt-1.5" placeholder="serendipity" required />
           </div>
           <div className="field col-span-full">
             <label className="text-[11px] text-muted tracking-wide">中文释义 *</label>
             <input type="text" value={chinese} onChange={e => setChinese(e.target.value)}
-              className="form-field mt-1.5"
-              placeholder="意外发现美好事物的运气" required />
+              className="form-field mt-1.5" placeholder="意外发现美好事物的运气" required />
           </div>
           <div className="field">
             <label className="text-[11px] text-muted tracking-wide">音标</label>
             <input type="text" value={phonetic} onChange={e => setPhonetic(e.target.value)}
-              className="form-field mt-1.5"
-              placeholder="/ˌserənˈdɪpəti/" />
+              className="form-field mt-1.5" placeholder="/ˌserənˈdɪpəti/" />
           </div>
           <div className="field">
             <label className="text-[11px] text-muted tracking-wide">标签 (逗号分隔)</label>
             <input type="text" value={tagsInput} onChange={e => setTagsInput(e.target.value)}
-              className="form-field mt-1.5"
-              placeholder="雅思, 电影台词" />
+              className="form-field mt-1.5" placeholder="雅思, 电影台词" />
           </div>
           <div className="field col-span-full">
             <label className="text-[11px] text-muted tracking-wide">例句</label>
             <textarea value={example} onChange={e => setExample(e.target.value)} rows={3}
-              className="form-field mt-1.5 resize-none"
-              placeholder="英文例句，帮助理解语境..." />
+              className="form-field mt-1.5 resize-none" placeholder="英文例句，帮助理解语境..." />
           </div>
         </div>
         <div className="form-actions flex gap-2 mt-4 justify-end">

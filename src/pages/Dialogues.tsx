@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
 import type { DialogueCategory } from '@/types';
-import { Plus, FileText, ArrowLeft } from 'lucide-react';
+import Modal from '@/components/Modal';
+import { Plus, FileText } from 'lucide-react';
+import { dictsApi } from '@/utils/api';
 
-const CATEGORIES: DialogueCategory[] = ['电影/剧集', '书籍', '演讲', '日常/工作'];
+const FALLBACK_CATEGORIES: DialogueCategory[] = ['电影/剧集', '书籍', '演讲', '日常/工作'];
 
 export default function Dialogues() {
   const dialogues = useStore(s => s.dialogues);
   const addDialogue = useStore(s => s.addDialogue);
   const navigate = useNavigate();
 
+  const [categories, setCategories] = useState<DialogueCategory[]>(FALLBACK_CATEGORIES);
   const [showModal, setShowModal] = useState(false);
   const [category, setCategory] = useState<DialogueCategory | ''>('');
 
@@ -18,6 +21,17 @@ export default function Dialogues() {
   const [source, setSource] = useState('');
   const [selCategory, setSelCategory] = useState<DialogueCategory>('电影/剧集');
   const [content, setContent] = useState('');
+
+  // 从字典表动态加载分类
+  useEffect(() => {
+    dictsApi.list('dialogue_category').then(items => {
+      if (items.length > 0) {
+        const labels = items.map(i => i.itemLabel) as DialogueCategory[];
+        setCategories(labels);
+        setSelCategory(prev => labels.includes(prev) ? prev : labels[0]);
+      }
+    }).catch(() => { /* 401 等拦截器已处理，保持 fallback */ });
+  }, []);
 
   const filtered = category ? dialogues.filter(d => d.category === category) : dialogues;
 
@@ -47,7 +61,7 @@ export default function Dialogues() {
       {/* Category segment */}
       <div className="flex gap-2 mb-6">
         <div className="seg flex gap-[2px] bg-[#f2f2f2] p-[3px] rounded-[13px] flex-wrap">
-          {[['', '全部'], ...CATEGORIES.map(c => [c, c] as [string, string])].map(([val, label]) => (
+          {[['', '全部'], ...categories.map(c => [c, c] as [string, string])].map(([val, label]) => (
             <button
               key={val}
               onClick={() => setCategory(val as DialogueCategory | '')}
@@ -65,10 +79,35 @@ export default function Dialogues() {
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="empty bg-white rounded-[18px]">
-          <FileText size={40} className="mx-auto mb-3 text-muted" />
-          <div>还没有对话素材，粘贴台词或段落来积累吧</div>
+      {dialogues.length === 0 ? (
+        <div className="rounded-[20px] border border-dashed border-neutral-200 bg-white/60 py-[60px] px-5 text-center">
+          <div className="w-14 h-14 rounded-[16px] bg-neutral-100 inline-flex items-center justify-center mb-4">
+            <FileText size={24} className="text-neutral-400" strokeWidth={1.8} />
+          </div>
+          <h3 className="text-[16px] font-semibold text-neutral-800 mb-1">还没有对话素材</h3>
+          <p className="text-[13px] text-neutral-500 mb-5 max-w-[300px] mx-auto leading-relaxed">
+            把喜欢的电影台词、书摘、演讲片段贴进来，随时翻看跟读
+          </p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-[4px] h-10 px-5 rounded-[12px] bg-neutral-900 text-white text-[13.5px] font-medium hover:bg-neutral-800 transition-colors"
+          >
+            <Plus size={15} strokeWidth={2.2} /> 添加第一条
+          </button>
+          <div className="mt-5 flex items-center justify-center gap-3 text-[11.5px] text-neutral-400">
+            <span>💡</span>
+            <span>试试 Friends 咖啡馆那段 · 或 TED 演讲开头</span>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-[20px] border border-neutral-100 bg-white py-[40px] text-center">
+          <p className="text-[13.5px] text-neutral-500">当前分类下还没有对话</p>
+          <button
+            onClick={() => { setCategory(''); }}
+            className="mt-3 text-[13px] text-neutral-900 underline underline-offset-2 hover:no-underline"
+          >
+            查看全部 {dialogues.length} 条
+          </button>
         </div>
       ) : (
         <div className="dlg-grid grid grid-cols-2 gap-[12px]">
@@ -96,62 +135,46 @@ export default function Dialogues() {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-white rounded-[18px] w-full max-w-[520px] max-h-[85vh] overflow-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center px-5 py-4 border-b border-line">
-              <h3 className="text-[16px] font-semibold text-ink">添加对话素材</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="w-8 h-8 rounded-[10px] text-muted hover:bg-[#f2f2f2] inline-flex items-center justify-center"
-              >✕</button>
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="添加对话素材" size="lg">
+        <form onSubmit={handleSubmit} className="p-5">
+          <div className="space-y-4">
+            <div>
+              <label className="text-[12px] text-neutral-600 mb-1.5 block font-medium">标题 *</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                className="w-full h-11 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[14px]"
+                placeholder="例如: Friends S01E01 · 咖啡馆偶遇" required />
             </div>
-            <form onSubmit={handleSubmit} className="p-5">
-              <div className="form grid grid-cols-2 gap-3 bg-white">
-                <div className="field col-span-full">
-                  <label className="text-[11px] text-muted tracking-wide">标题 *</label>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                    className="form-field mt-1.5"
-                    placeholder="例如: Friends S01E01 · 咖啡馆偶遇" required />
-                </div>
-                <div className="field">
-                  <label className="text-[11px] text-muted tracking-wide">来源</label>
-                  <input type="text" value={source} onChange={e => setSource(e.target.value)}
-                    className="form-field mt-1.5" placeholder="Friends 老友记" />
-                </div>
-                <div className="field">
-                  <label className="text-[11px] text-muted tracking-wide">分类</label>
-                  <select value={selCategory} onChange={e => setSelCategory(e.target.value as DialogueCategory)}
-                    className="form-field mt-1.5">
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="field col-span-full">
-                  <label className="text-[11px] text-muted tracking-wide">对话内容 *</label>
-                  <textarea value={content} onChange={e => setContent(e.target.value)} rows={7}
-                    className="form-field mt-1.5 resize-none" placeholder="粘贴或输入对话文本..." required />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[12px] text-neutral-600 mb-1.5 block font-medium">来源</label>
+                <input type="text" value={source} onChange={e => setSource(e.target.value)}
+                  className="w-full h-10 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px]"
+                  placeholder="Friends 老友记" />
               </div>
-              <div className="form-actions flex gap-2 mt-4 justify-end">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="btn bg-[#f2f2f2] text-ink hover:bg-[#e8e8e8] px-4 py-[9px] rounded-[12px] text-[13px] font-medium">
-                  取消
-                </button>
-                <button type="submit" className="btn btn-primary px-4 py-[9px] rounded-[12px] text-[13px] font-medium">保存</button>
+              <div>
+                <label className="text-[12px] text-neutral-600 mb-1.5 block font-medium">分类</label>
+                <select value={selCategory} onChange={e => setSelCategory(e.target.value as DialogueCategory)}
+                  className="w-full h-10 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px]">
+                  {categories.map(c => <option key={c}>{c}</option>)}
+                </select>
               </div>
-            </form>
+            </div>
+            <div>
+              <label className="text-[12px] text-neutral-600 mb-1.5 block font-medium">对话内容 *</label>
+              <textarea value={content} onChange={e => setContent(e.target.value)} rows={8}
+                className="w-full px-4 py-3 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px] resize-none leading-relaxed font-mono"
+                placeholder="粘贴或输入对话文本..." required />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex gap-2 mt-5 justify-end">
+            <button type="button" onClick={() => setShowModal(false)}
+              className="btn bg-[#f2f2f2] text-ink hover:bg-[#e8e8e8] px-4 py-[9px] rounded-[12px] text-[13px] font-medium">
+              取消
+            </button>
+            <button type="submit" className="btn btn-primary px-5 py-[9px] rounded-[12px] text-[13px] font-medium">保存</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
-
-// Not used in this file - kept for potential future use in WordEdit redirects
-export function _ArrowLeft() { return <ArrowLeft size={15} />; }
