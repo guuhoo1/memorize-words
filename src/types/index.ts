@@ -31,6 +31,19 @@ export interface Dialogue {
   updatedAt?: string;
 }
 
+export interface SentencePattern {
+  id: number;
+  pattern: string;
+  english: string;
+  chinese: string;
+  explanation?: string;
+  category: string;
+  tags: string[];
+  sourceDialogueId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export type DialogueCategory =
   | '电影/剧集'
   | '书籍'

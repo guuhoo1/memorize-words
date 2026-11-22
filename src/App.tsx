@@ -13,6 +13,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { useAuthStore } from '@/store/authStore';
 import { useStore } from '@/store/memorizeStore';
+import SentencePatterns from '@/pages/SentencePatterns';
 import Dictionaries from '@/pages/Dictionaries';
 
 /** 路由守卫：未登录 → /login */
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/words" element={<Words />} />
           <Route path="/words/new" element={<WordEdit />} />
           <Route path="/words/:id" element={<WordEdit />} />
+          <Route path="/patterns" element={<SentencePatterns />} />
           <Route path="/dialogues" element={<Dialogues />} />
           <Route path="/dialogues/:id" element={<DialogueDetail />} />
           <Route path="/profile" element={<Profile />} />

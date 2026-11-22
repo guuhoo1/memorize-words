@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { wordsApi, dialoguesApi, reviewApi } from '@/utils/api';
-import type { Word, Dialogue, ReviewRecord, DialogueCategory } from '@/types';
+import { wordsApi, dialoguesApi, reviewApi, sentencePatternsApi } from '@/utils/api';
+import type { Word, Dialogue, ReviewRecord, DialogueCategory, SentencePattern } from '@/types';
 
 interface AddWordInput {
   english: string;
@@ -15,6 +15,7 @@ interface MemorizeStore {
   // state
   words: Word[];
   dialogues: Dialogue[];
+  sentencePatterns: SentencePattern[];
   reviewHistory: ReviewRecord[];
   loading: boolean;
   loaded: boolean;
@@ -33,6 +34,14 @@ interface MemorizeStore {
   updateDialogue: (id: number, patch: Partial<Dialogue>) => Promise<Dialogue>;
   deleteDialogue: (id: number) => Promise<void>;
 
+  // sentence patterns
+  addSentencePattern: (data: {
+    pattern: string; english: string; chinese: string;
+    explanation?: string; category?: string; tags?: string[]; sourceDialogueId?: number;
+  }) => Promise<SentencePattern>;
+  updateSentencePattern: (id: number, patch: Partial<SentencePattern>) => Promise<SentencePattern>;
+  deleteSentencePattern: (id: number) => Promise<void>;
+
   // review
   submitReview: (wordId: number, grade: number) => Promise<Word>;
 }
@@ -40,6 +49,7 @@ interface MemorizeStore {
 export const useStore = create<MemorizeStore>((set, get) => ({
   words: [],
   dialogues: [],
+  sentencePatterns: [],
   reviewHistory: [],
   loading: false,
   loaded: false,
@@ -47,8 +57,12 @@ export const useStore = create<MemorizeStore>((set, get) => ({
   reload: async () => {
     set({ loading: true });
     try {
-      const [words, dialogues] = await Promise.all([wordsApi.list(), dialoguesApi.list()]);
-      set({ words, dialogues, loaded: true, loading: false });
+      const [words, dialogues, sentencePatterns] = await Promise.all([
+        wordsApi.list(),
+        dialoguesApi.list(),
+        sentencePatternsApi.list()
+      ]);
+      set({ words, dialogues, sentencePatterns, loaded: true, loading: false });
     } catch {
       set({ loading: false });
       throw new Error('加载数据失败');
@@ -69,9 +83,7 @@ export const useStore = create<MemorizeStore>((set, get) => ({
 
   deleteWord: async (id) => {
     await wordsApi.remove(id);
-    set({
-      words: get().words.filter(w => w.id !== id)
-    });
+    set({ words: get().words.filter(w => w.id !== id) });
   },
 
   dueWords: async () => reviewApi.due(),
@@ -91,6 +103,23 @@ export const useStore = create<MemorizeStore>((set, get) => ({
   deleteDialogue: async (id) => {
     await dialoguesApi.remove(id);
     set({ dialogues: get().dialogues.filter(x => x.id !== id) });
+  },
+
+  addSentencePattern: async (data) => {
+    const sp = await sentencePatternsApi.create(data);
+    set({ sentencePatterns: [sp, ...get().sentencePatterns] });
+    return sp;
+  },
+
+  updateSentencePattern: async (id, patch) => {
+    const sp = await sentencePatternsApi.update(id, patch as any);
+    set({ sentencePatterns: get().sentencePatterns.map(x => (x.id === id ? sp : x)) });
+    return sp;
+  },
+
+  deleteSentencePattern: async (id) => {
+    await sentencePatternsApi.remove(id);
+    set({ sentencePatterns: get().sentencePatterns.filter(x => x.id !== id) });
   },
 
   submitReview: async (wordId, grade) => {

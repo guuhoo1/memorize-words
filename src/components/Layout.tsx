@@ -2,12 +2,13 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
 import { useAuthStore } from '@/store/authStore';
 import { dueWords } from '@/utils/sm2';
-import { Home, CalendarCheck, BookOpen, MessageSquare } from 'lucide-react';
+import { Home, CalendarCheck, BookOpen, MessageSquare, Type } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: Home, label: '概览' },
   { to: '/review', icon: CalendarCheck, label: '今日复习', badge: true },
   { to: '/words', icon: BookOpen, label: '单词库' },
+  { to: '/patterns', icon: Type, label: '常用句型' },
   { to: '/dialogues', icon: MessageSquare, label: '对话库' }
 ];
 

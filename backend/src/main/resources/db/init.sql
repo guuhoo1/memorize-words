@@ -68,3 +68,20 @@ CREATE TABLE IF NOT EXISTS sys_dict_item (
   INDEX idx_dict_user_type (user_id, dict_type),
   CONSTRAINT fk_dict_user FOREIGN KEY (user_id) REFERENCES sys_user(id) ON DELETE CASCADE
 ) COMMENT '用户自定义字典（分类、标签建议等）';
+
+CREATE TABLE IF NOT EXISTS sentence_pattern (
+  id                      BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id                 BIGINT       NOT NULL,
+  pattern                 VARCHAR(256) NOT NULL COMMENT '句型模板',
+  english                 TEXT         NOT NULL COMMENT '英文例句',
+  chinese                 VARCHAR(256) NOT NULL COMMENT '中文翻译',
+  explanation             TEXT                  COMMENT '用法说明',
+  category                VARCHAR(32)  NOT NULL DEFAULT '未分类',
+  tags                    VARCHAR(512) DEFAULT '',
+  source_dialogue_id      BIGINT,
+  created_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_sp_user_id (user_id),
+  INDEX idx_sp_category (category),
+  CONSTRAINT fk_sp_user FOREIGN KEY (user_id) REFERENCES sys_user(id) ON DELETE CASCADE
+) COMMENT '常用句型';

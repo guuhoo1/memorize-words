@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Word, Dialogue, ReviewRecord } from '@/types';
+import type { Word, Dialogue, ReviewRecord, SentencePattern } from '@/types';
 
 export interface ApiRes<T> {
   code: number;
@@ -163,6 +163,71 @@ export const dialoguesApi = {
     api.put<Dialogue>(`/dialogues/${id}`, data),
 
   remove: (id: number) => api.delete<void>(`/dialogues/${id}`)
+};
+
+// ---- 常用句型 ----
+interface RawSP extends Omit<SentencePattern, 'tags'> {
+  tags?: string;
+}
+
+function mapSP(raw: RawSP): SentencePattern {
+  return {
+    ...raw,
+    tags: (raw.tags || '').split(',').map(s => s.trim()).filter(Boolean)
+  };
+}
+
+function mapSPList(list: RawSP[]): SentencePattern[] {
+  return list.map(mapSP);
+}
+
+export const sentencePatternsApi = {
+  list: async (category?: string, tag?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    if (tag) params.set('tag', tag);
+    const qs = params.toString();
+    const data = await api.get<RawSP[]>('/sentence-patterns' + (qs ? '?' + qs : ''));
+    return mapSPList(data as any);
+  },
+
+  get: async (id: number) => {
+    const data = await api.get<RawSP>(`/sentence-patterns/${id}`);
+    return mapSP(data as any);
+  },
+
+  create: async (data: {
+    pattern: string;
+    english: string;
+    chinese: string;
+    explanation?: string;
+    category?: string;
+    tags?: string[];
+    sourceDialogueId?: number;
+  }) => {
+    const payload = { ...data, tags: (data.tags ?? []).join(',') };
+    const res = await api.post<RawSP>('/sentence-patterns', payload);
+    return mapSP(res as any);
+  },
+
+  update: async (id: number, data: {
+    pattern: string;
+    english: string;
+    chinese: string;
+    explanation?: string;
+    category?: string;
+    tags?: string[];
+    sourceDialogueId?: number;
+  }) => {
+    const payload: any = { ...data };
+    if (data.tags) payload.tags = data.tags.join(',');
+    const res = await api.put<RawSP>(`/sentence-patterns/${id}`, payload);
+    return mapSP(res as any);
+  },
+
+  remove: (id: number) => api.delete<void>(`/sentence-patterns/${id}`),
+
+  categories: () => api.get<string[]>('/sentence-patterns/categories')
 };
 
 // ---- 复习 ----
