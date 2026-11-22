@@ -206,3 +206,65 @@ export default function SentencePatterns() {
     </div>
   );
 }
+
+/**
+ * 把句型模板里的「占位符」高亮出来
+ * 做法：匹配一段段 token —— 要么是占位符（蓝胶囊），要么是普通文本（灰等宽）
+ */
+function renderPattern(pattern: string) {
+  // 匹配任何可能是占位符的片段（按优先级从长到短）
+  const PLACEHOLDER_REGEX = new RegExp(
+    [
+      // 带括号的整体：(also)、(that)、[强调部分]
+      '[（(\\[].+?[)）\\]]',
+      // 英文缩写占位符（独立完整词）
+      '\\b(?:that/who|that \\+ 句子|the \\+ 比较级|one of the \\+ 最高级|to do|doing|done|does|did|sth|sb|adj|adv|prep|v|n)\\b',
+      // 中文语法术语（连续命中）
+      '被强调部分|时间点|地点|原因|结果|条件|目的|让步|其余部分|强调句|定语从句|宾语从句|状语从句|主语从句|名词性从句|虚拟语气|倒装结构|助动词|情态动词|be动词|谓语动词|实义动词|复数名词|比较级|最高级|主语|谓语|宾语|状语|定语|补语|表语|动词|名词|代词|形容词|副词'
+    ].join('|'),
+    'g'
+  );
+
+  const parts: Array<{ type: 'ph' | 'lit'; text: string }> = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+
+  while ((m = PLACEHOLDER_REGEX.exec(pattern)) !== null) {
+    if (m.index > lastIndex) {
+      parts.push({ type: 'lit', text: pattern.slice(lastIndex, m.index) });
+    }
+    parts.push({ type: 'ph', text: m[0] });
+    lastIndex = m.index + m[0].length;
+    // 防止空匹配死循环
+    if (m[0].length === 0) PLACEHOLDER_REGEX.lastIndex++;
+  }
+  if (lastIndex < pattern.length) {
+    parts.push({ type: 'lit', text: pattern.slice(lastIndex) });
+  }
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-[2px] gap-y-[2px]">
+      {parts.map((p) =>
+        p.type === 'ph' ? renderPlaceholder(p.text) : renderLiteral(p.text)
+      )}
+    </div>
+  );
+}
+
+/** 渲染占位符 —— 绿色高亮胶囊 */
+function renderPlaceholder(seg: string) {
+  return (
+    <span className="shrink-0 font-mono text-[12px] font-medium text-[#0a7d3a] bg-[#e7f7ec] border border-[#a8e0bc] px-[6px] py-[1px] rounded-[5px] tracking-tight">
+      {seg}
+    </span>
+  );
+}
+
+/** 渲染固定词 —— 黑色等宽字体 */
+function renderLiteral(seg: string) {
+  return (
+    <span className="font-mono text-[#111] text-[12.5px] break-all leading-[1.8]">
+      {seg}
+    </span>
+  );
+}
