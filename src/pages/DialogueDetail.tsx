@@ -1,12 +1,21 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
 import { ArrowLeft, BookOpen } from 'lucide-react';
+import WordForm from '@/components/WordForm';
+import Modal from '@/components/Modal';
+import type { Word } from '@/types';
 
 export default function DialogueDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dialogues = useStore(s => s.dialogues);
   const words = useStore(s => s.words);
+  const addWord = useStore(s => s.addWord);
+  const updateWord = useStore(s => s.updateWord);
+
+  const [editing, setEditing] = useState<Word | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
 
   const d = dialogues.find(x => x.id === Number(id));
 
@@ -92,8 +101,8 @@ export default function DialogueDetail() {
             {linkedWords.map(w => (
               <button
                 key={w.id}
-                onClick={() => navigate(`/words/${w.id}`)}
-                className="chip"
+                onClick={() => setEditing(w)}
+                className="chip cursor-pointer hover:bg-ink/[0.08]"
               >
                 <b className="font-semibold mr-1.5">{w.english}</b>
                 {w.chinese}
@@ -105,12 +114,39 @@ export default function DialogueDetail() {
 
       <div className="mt-6">
         <button
-          onClick={() => navigate('/words/new')}
+          onClick={() => setShowAdd(true)}
           className="text-[13px] text-muted hover:text-ink inline-flex items-center gap-1.5"
         >
           <BookOpen size={14} /> 在此对话中添加新单词
         </button>
       </div>
+
+      {/* 添加 Modal */}
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="在此对话中添加新单词" size="md">
+        <WordForm
+          defaultSourceDialogueId={d.id}
+          onSubmit={async (data) => {
+            await addWord(data);
+            setShowAdd(false);
+          }}
+          onCancel={() => setShowAdd(false)}
+        />
+      </Modal>
+
+      {/* 编辑 Modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="编辑单词" size="md">
+        {editing && (
+          <WordForm
+            key={editing.id}
+            initial={editing}
+            onSubmit={async (data) => {
+              await updateWord(editing.id, data);
+              setEditing(null);
+            }}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

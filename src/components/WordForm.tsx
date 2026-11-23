@@ -3,6 +3,7 @@ import type { Word } from '@/types';
 
 interface WordFormProps {
   initial?: Word;
+  defaultSourceDialogueId?: number;
   existingTags?: string[];
   onSubmit: (data: {
     english: string;
@@ -10,12 +11,13 @@ interface WordFormProps {
     phonetic?: string;
     example?: string;
     tags: string[];
+    sourceDialogueId?: number;
   }) => Promise<void>;
   onCancel: () => void;
   onDelete?: () => Promise<void>;
 }
 
-export default function WordForm({ initial, onSubmit, onCancel, onDelete }: WordFormProps) {
+export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, onCancel, onDelete }: WordFormProps) {
   const isEdit = !!initial;
 
   const [english, setEnglish] = useState(initial?.english ?? '');
@@ -47,7 +49,8 @@ export default function WordForm({ initial, onSubmit, onCancel, onDelete }: Word
         chinese: chinese.trim(),
         phonetic: phonetic.trim() || undefined,
         example: example.trim() || undefined,
-        tags: tagsInput.split(',').map(s => s.trim()).filter(Boolean)
+        tags: tagsInput.split(',').map(s => s.trim()).filter(Boolean),
+        sourceDialogueId: initial?.sourceDialogueId ?? defaultSourceDialogueId
       });
     } catch (err: any) {
       setError(err?.message || '保存失败');
@@ -57,8 +60,8 @@ export default function WordForm({ initial, onSubmit, onCancel, onDelete }: Word
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-5">
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="p-5 flex flex-col flex-1">
+      <div className="space-y-4 flex-1">
         <Field label="英文单词" required>
           <input
             type="text"
@@ -114,7 +117,7 @@ export default function WordForm({ initial, onSubmit, onCancel, onDelete }: Word
 
       {error && <p className="text-[12px] text-red-500 mt-3">{error}</p>}
 
-      <div className="flex gap-2 mt-5 justify-between">
+      <div className="flex gap-2 mt-5 justify-between mt-auto pt-5">
         {onDelete ? (
           <button
             type="button"

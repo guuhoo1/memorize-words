@@ -1,11 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/memorizeStore';
 import { dueWords } from '@/utils/sm2';
+import WordForm from '@/components/WordForm';
+import Modal from '@/components/Modal';
+import type { Word } from '@/types';
 
 export default function Dashboard() {
   const words = useStore(s => s.words);
   const dialogues = useStore(s => s.dialogues);
+  const updateWord = useStore(s => s.updateWord);
   const navigate = useNavigate();
+
+  const [editing, setEditing] = useState<Word | null>(null);
 
   const due = dueWords(words);
   const mastered = words.filter(w => w.repetitions >= 4).length;
@@ -61,8 +68,8 @@ export default function Dashboard() {
           {recentWords.map(w => (
             <button
               key={w.id}
-              onClick={() => navigate(`/words/${w.id}`)}
-              className="chip text-ink"
+              onClick={() => setEditing(w)}
+              className="chip text-ink cursor-pointer hover:bg-ink/[0.08]"
             >
               <b className="font-semibold mr-[7px]">{w.english}</b>
               {w.chinese}
@@ -97,6 +104,21 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+
+      {/* 编辑 Modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="编辑单词" size="md">
+        {editing && (
+          <WordForm
+            key={editing.id}
+            initial={editing}
+            onSubmit={async (data) => {
+              await updateWord(editing.id, data);
+              setEditing(null);
+            }}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
