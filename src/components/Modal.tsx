@@ -108,7 +108,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
         className="sm:hidden absolute inset-x-0 bottom-0 top-auto"
         style={{
           transform: `translateY(${translateY}px)`,
-          transition: dragging ? 'none' : 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+          transition: dragging ? 'none' : 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)'
         }}
         onClick={e => e.stopPropagation()}
         onTouchStart={onTouchStart}
@@ -119,8 +119,9 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
           ref={sheetRef}
           className="bg-white rounded-t-[20px] flex flex-col overflow-hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
           style={{
-            height: `calc(100dvh - ${Math.max(translateY, 0)}px)`,
-            transform: translateY === 0 ? 'translateY(0)' : 'none'
+            maxHeight: '92dvh',
+            height: 'min(92dvh, max-content)',
+            paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
           {/* 拖拽手柄 */}
@@ -129,7 +130,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
           </div>
 
           {/* Header */}
-          <div className="shrink-0 px-4 py-2 flex items-center gap-2">
+          <div className="shrink-0 px-4 py-2 flex items-center gap-2 border-b border-line">
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full text-muted hover:bg-[#f2f2f2] active:bg-[#e8e8e8] inline-flex items-center justify-center transition touch-manipulation"
@@ -144,8 +145,8 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
           </div>
 
           {/* Body */}
-          <div className={`modal-body-scroll flex-1 overflow-y-auto overscroll-contain ${footer ? '' : 'flex flex-col'}`}>
-            <div className={`w-full ${footer ? '' : 'flex flex-col flex-1'}`}>
+          <div className={`modal-body-scroll overflow-y-auto overscroll-contain ${footer ? '' : 'flex flex-col'}`}>
+            <div className={`w-full ${footer ? '' : 'flex flex-col'}`}>
               {children}
             </div>
           </div>

@@ -60,8 +60,8 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-5 flex flex-col flex-1">
-      <div className="space-y-4 flex-1">
+    <form onSubmit={handleSubmit} className="p-5">
+      <div className="space-y-4">
         <Field label="英文单词" required>
           <input
             type="text"
@@ -117,7 +117,7 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
 
       {error && <p className="text-[12px] text-red-500 mt-3">{error}</p>}
 
-      <div className="flex gap-2 mt-5 justify-between mt-auto pt-5">
+      <div className="flex gap-2 mt-5 justify-between">
         {onDelete ? (
           <button
             type="button"
