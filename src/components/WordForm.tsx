@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Word } from '@/types';
+import TagInput from '@/components/TagInput';
 
 interface WordFormProps {
   initial?: Word;
@@ -17,19 +18,18 @@ interface WordFormProps {
   onDelete?: () => Promise<void>;
 }
 
-export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, onCancel, onDelete }: WordFormProps) {
+export default function WordForm({ initial, defaultSourceDialogueId, existingTags = [], onSubmit, onCancel, onDelete }: WordFormProps) {
   const isEdit = !!initial;
 
   const [english, setEnglish] = useState(initial?.english ?? '');
   const [chinese, setChinese] = useState(initial?.chinese ?? '');
   const [phonetic, setPhonetic] = useState(initial?.phonetic ?? '');
   const [example, setExample] = useState(initial?.example ?? '');
-  const [tagsInput, setTagsInput] = useState(initial?.tags?.join(', ') ?? '');
+  const [selectedTags, setSelectedTags] = useState<string[]>(initial?.tags ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // ESC 关闭
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -41,6 +41,7 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
       setError('请填写英文和中文释义');
       return;
     }
+
     setLoading(true);
     setError('');
     try {
@@ -49,7 +50,7 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
         chinese: chinese.trim(),
         phonetic: phonetic.trim() || undefined,
         example: example.trim() || undefined,
-        tags: tagsInput.split(',').map(s => s.trim()).filter(Boolean),
+        tags: selectedTags,
         sourceDialogueId: initial?.sourceDialogueId ?? defaultSourceDialogueId
       });
     } catch (err: any) {
@@ -69,7 +70,7 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
             value={english}
             onChange={e => setEnglish(e.target.value)}
             placeholder="serendipity"
-            className="w-full h-11 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[15px] font-medium tracking-tight"
+            className="w-full h-11 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[15px] font-medium tracking-tight transition-colors"
           />
         </Field>
 
@@ -79,30 +80,28 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
             value={chinese}
             onChange={e => setChinese(e.target.value)}
             placeholder="意外发现美好事物的运气"
-            className="w-full h-11 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[14px]"
+            className="w-full h-11 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[14px] transition-colors"
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="音标">
-            <input
-              type="text"
-              value={phonetic}
-              onChange={e => setPhonetic(e.target.value)}
-              placeholder="/ˌserənˈdɪpəti/"
-              className="w-full h-10 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px] font-mono"
-            />
-          </Field>
-          <Field label="标签">
-            <input
-              type="text"
-              value={tagsInput}
-              onChange={e => setTagsInput(e.target.value)}
-              placeholder="CET6, 雅思, 电影"
-              className="w-full h-10 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px]"
-            />
-          </Field>
-        </div>
+        <Field label="音标">
+          <input
+            type="text"
+            value={phonetic}
+            onChange={e => setPhonetic(e.target.value)}
+            placeholder="/ˌserənˈdɪpəti/"
+            className="w-full h-10 px-4 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px] font-mono transition-colors"
+          />
+        </Field>
+
+        <Field label="标签">
+          <TagInput
+            value={selectedTags}
+            onChange={setSelectedTags}
+            suggestions={existingTags}
+            placeholder="输入或选择标签…"
+          />
+        </Field>
 
         <Field label="例句（可选）">
           <textarea
@@ -110,7 +109,7 @@ export default function WordForm({ initial, defaultSourceDialogueId, onSubmit, o
             onChange={e => setExample(e.target.value)}
             rows={3}
             placeholder="Finding that rare book in a second-hand shop was pure serendipity."
-            className="w-full px-4 py-3 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px] resize-none leading-relaxed"
+            className="w-full px-4 py-3 rounded-[12px] bg-[#fafafa] focus:bg-[#f2f2f2] outline-none text-[13px] resize-none leading-relaxed transition-colors"
           />
         </Field>
       </div>

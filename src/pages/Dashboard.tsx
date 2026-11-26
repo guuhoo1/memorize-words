@@ -17,6 +17,8 @@ export default function Dashboard() {
   const due = dueWords(words);
   const mastered = words.filter(w => w.repetitions >= 4).length;
 
+  const allTags = Array.from(new Set(words.flatMap(w => w.tags)));
+
   const recentWords = [...words]
     .sort((a, b) => (b.createdAt ? Date.parse(b.createdAt) : 0) - (a.createdAt ? Date.parse(a.createdAt) : 0))
     .slice(0, 8);
@@ -111,6 +113,7 @@ export default function Dashboard() {
           <WordForm
             key={editing.id}
             initial={editing}
+            existingTags={allTags}
             onSubmit={async (data) => {
               await updateWord(editing.id, data);
               setEditing(null);

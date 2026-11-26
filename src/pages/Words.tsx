@@ -193,6 +193,7 @@ export default function Words() {
       {/* 添加 Modal */}
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="添加新单词" size="md">
         <WordForm
+          existingTags={allTags}
           onSubmit={async (data) => {
             await addWord(data);
             setShowAdd(false);
@@ -207,6 +208,7 @@ export default function Words() {
           <WordForm
             key={editing.id}
             initial={editing}
+            existingTags={allTags}
             onSubmit={async (data) => {
               await updateWord(editing.id, data);
               setEditing(null);

@@ -30,6 +30,7 @@ export default function DialogueDetail() {
 
   // 关联生词：word.sourceDialogueId === d.id
   const linkedWords = words.filter(w => w.sourceDialogueId === d.id);
+  const allTags = Array.from(new Set(words.flatMap(w => w.tags)));
 
   const rawLines = d.content.split('\n').filter(Boolean);
 
@@ -125,6 +126,7 @@ export default function DialogueDetail() {
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="在此对话中添加新单词" size="md">
         <WordForm
           defaultSourceDialogueId={d.id}
+          existingTags={allTags}
           onSubmit={async (data) => {
             await addWord(data);
             setShowAdd(false);
@@ -139,6 +141,7 @@ export default function DialogueDetail() {
           <WordForm
             key={editing.id}
             initial={editing}
+            existingTags={allTags}
             onSubmit={async (data) => {
               await updateWord(editing.id, data);
               setEditing(null);
